@@ -19,7 +19,7 @@ function validateTicketInput(input) {
     return { input: 'Ожидается объект с данными заявки' };
   }
 
-  if (typeof input.title !== 'string' || input.title.length < 5 || input.title.length > 80) {
+  if (typeof input.title !== 'string' || input.title.trim().length < 5 || input.title.trim().length > 80) {
     errors.title = 'Тема должна содержать от 5 до 80 символов';
   }
 
@@ -43,20 +43,22 @@ function canChangeStatus(from, to) {
   return false;
 }
 
-/**
- * Условия поиска объединяются оператором AND.
- * В результирующем списке первыми должны идти важные и новые заявки.
- */
+
 function filterAndSort(tickets, filters = {}) {
   const search = String(filters.search || '').trim();
   const status = String(filters.status || '').trim();
   const category = String(filters.category || '').trim();
+  const priority = String(filters.priority || '').trim();
+
   return tickets
     .filter((ticket) => {
-      if (status && ticket.status !== status) return false;
-      if (category && ticket.category !== category) return false;
-      if (!search) return true;
-      return ticket.title.includes(search) || ticket.description.includes(search);
+      const matchesFilters =
+        (!status || ticket.status === status) &&
+        (!category || ticket.category === category) &&
+        (!priority || ticket.priority === priority) &&
+        (!search || ticket.title.includes(search) || ticket.description.includes(search));
+
+      return matchesFilters;
     })
     .sort((a, b) => {
       const byPriority = PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
